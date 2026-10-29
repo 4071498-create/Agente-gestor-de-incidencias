@@ -187,3 +187,145 @@ def test_tecnico_no_puede_usar_formulario_de_usuario(tmp_path, monkeypatch):
     respuesta = cliente.get("/incidencias/nueva")
 
     assert respuesta.status_code == 403
+
+
+def test_solo_tecnico_puede_abrir_el_panel(tmp_path, monkeypatch):
+    cliente, _ = crear_cliente(tmp_path, monkeypatch)
+
+    assert cliente.get("/tecnico").status_code == 302
+    iniciar_sesion(cliente)
+    assert cliente.get("/tecnico").status_code == 403
+
+    cliente.post("/logout")
+    iniciar_sesion(cliente, "tecnico", "clave-tecnico")
+    respuesta = cliente.get("/tecnico")
+    assert respuesta.status_code == 200
+    assert "Panel del técnico" in respuesta.get_data(as_text=True)
+
+
+def test_panel_muestra_todas_las_incidencias_y_filtra_por_campos(
+    tmp_path, monkeypatch
+):
+    cliente, ruta_db = crear_cliente(tmp_path, monkeypatch)
+    with conectar_db(ruta_db) as conexion:
+        usuario_id = conexion.execute(
+            "SELECT id FROM usuarios WHERE nombre_usuario = 'usuario'"
+        ).fetchone()["id"]
+        tecnico_id = conexion.execute(
+            "SELECT id FROM usuarios WHERE nombre_usuario = 'tecnico'"
+        ).fetchone()["id"]
+        conexion.executemany(
+            """
+            INSERT INTO incidencias (
+                usuario_id, observacion, categoria, prioridad, estado
+            )
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            [
+                (usuario_id, "Portátil averiado", "hardware", "alta", "abierta"),
+                (tecnico_id, "Aplicación se cierra", "software", "media", "en curso"),
+                (usuario_id, "Red intermitente", "red", "alta", "resuelta"),
+            ],
+        )
+    iniciar_sesion(cliente, "tecnico", "clave-tecnico")
+
+    todas = cliente.get("/tecnico")
+    filtradas = cliente.get(
+        "/tecnico?categoria=hardware&prioridad=alta&estado=abierta"
+    )
+
+    assert todas.status_code == 200
+    assert "Portátil averiado" in todas.get_data(as_text=True)
+    assert "Aplicación se cierra" in todas.get_data(as_text=True)
+    assert "Red intermitente" in todas.get_data(as_text=True)
+    assert filtradas.status_code == 200
+    contenido = filtradas.get_data(as_text=True)
+    assert "Portátil averiado" in contenido
+    assert "Aplicación se cierra" not in contenido
+    assert "Red intermitente" not in contenido
+
+
+def test_panel_rechaza_filtros_invalidos(tmp_path, monkeypatch):
+    cliente, _ = crear_cliente(tmp_path, monkeypatch)
+    iniciar_sesion(cliente, "tecnico", "clave-tecnico")
+
+    respuesta = cliente.get("/tecnico?categoria=desconocida")
+
+    assert respuesta.status_code == 400
+
+
+def test_tecnico_puede_actualizar_categoria_prioridad_y_estado(
+    tmp_path, monkeypatch
+):
+    cliente, ruta_db = crear_cliente(tmp_path, monkeypatch)
+    with conectar_db(ruta_db) as conexion:
+        usuario_id = conexion.execute(
+            "SELECT id FROM usuarios WHERE nombre_usuario = 'usuario'"
+        ).fetchone()["id"]
+        incidencia_id = conexion.execute(
+            """
+            INSERT INTO incidencias (
+                usuario_id, observacion, prioridad, categoria
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (usuario_id, "Equipo sin conexión", "baja", "revisar"),
+        ).lastrowid
+    iniciar_sesion(cliente, "tecnico", "clave-tecnico")
+
+    respuesta = cliente.post(
+        f"/tecnico/incidencias/{incidencia_id}",
+        data={"categoria": "red", "prioridad": "alta", "estado": "en curso"},
+    )
+
+    assert respuesta.status_code == 302
+    with conectar_db(ruta_db) as conexion:
+        incidencia = conexion.execute(
+            "SELECT categoria, prioridad, estado FROM incidencias WHERE id = ?",
+            (incidencia_id,),
+        ).fetchone()
+    assert dict(incidencia) == {
+        "categoria": "red",
+        "prioridad": "alta",
+        "estado": "en curso",
+    }
+
+
+def test_actualizacion_tecnica_rechaza_datos_invalidos_y_ids_inexistentes(
+    tmp_path, monkeypatch
+):
+    cliente, ruta_db = crear_cliente(tmp_path, monkeypatch)
+    with conectar_db(ruta_db) as conexion:
+        usuario_id = conexion.execute(
+            "SELECT id FROM usuarios WHERE nombre_usuario = 'usuario'"
+        ).fetchone()["id"]
+        incidencia_id = conexion.execute(
+            """
+            INSERT INTO incidencias (usuario_id, observacion, prioridad)
+            VALUES (?, ?, ?)
+            """,
+            (usuario_id, "Equipo averiado", "media"),
+        ).lastrowid
+    iniciar_sesion(cliente, "tecnico", "clave-tecnico")
+
+    invalida = cliente.post(
+        f"/tecnico/incidencias/{incidencia_id}",
+        data={"categoria": "desconocida", "prioridad": "alta", "estado": "abierta"},
+    )
+    inexistente = cliente.post(
+        "/tecnico/incidencias/99999",
+        data={"categoria": "hardware", "prioridad": "alta", "estado": "abierta"},
+    )
+
+    assert invalida.status_code == 400
+    assert inexistente.status_code == 404
+    with conectar_db(ruta_db) as conexion:
+        incidencia = conexion.execute(
+            "SELECT categoria, prioridad, estado FROM incidencias WHERE id = ?",
+            (incidencia_id,),
+        ).fetchone()
+    assert dict(incidencia) == {
+        "categoria": "revisar",
+        "prioridad": "media",
+        "estado": "abierta",
+    }

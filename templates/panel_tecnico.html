@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Panel técnico · Gestor de incidencias{% endblock %}
+
+{% block content %}
+    <h1>Panel del técnico</h1>
+    <form action="{{ url_for('panel_tecnico') }}" method="get">
+        <label for="filtro-categoria">Categoría</label>
+        <select id="filtro-categoria" name="categoria">
+            <option value="">Todas</option>
+            {% for categoria in categorias %}
+                <option value="{{ categoria }}"
+                        {% if filtros["categoria"] == categoria %}selected{% endif %}>
+                    {{ categoria }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label for="filtro-prioridad">Prioridad</label>
+        <select id="filtro-prioridad" name="prioridad">
+            <option value="">Todas</option>
+            {% for prioridad in prioridades %}
+                <option value="{{ prioridad }}"
+                        {% if filtros["prioridad"] == prioridad %}selected{% endif %}>
+                    {{ prioridad }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label for="filtro-estado">Estado</label>
+        <select id="filtro-estado" name="estado">
+            <option value="">Todos</option>
+            {% for estado in estados %}
+                <option value="{{ estado }}"
+                        {% if filtros["estado"] == estado %}selected{% endif %}>
+                    {{ estado }}
+                </option>
+            {% endfor %}
+        </select>
+        <button type="submit">Filtrar</button>
+        <a href="{{ url_for('panel_tecnico') }}">Limpiar filtros</a>
+    </form>
+
+    {% if incidencias %}
+        <ul>
+            {% for incidencia in incidencias %}
+                <li>
+                    <h2>Incidencia #{{ incidencia["id"] }}</h2>
+                    <p>Usuario: {{ incidencia["nombre_usuario"] }}</p>
+                    <p>{{ incidencia["observacion"] }}</p>
+                    <p>Resumen: {{ incidencia["resumen"] }}</p>
+                    <time>{{ incidencia["fecha"] }}</time>
+                    <form action="{{ url_for('actualizar_incidencia', incidencia_id=incidencia['id']) }}"
+                          method="post">
+                        <label for="categoria-{{ incidencia['id'] }}">Categoría</label>
+                        <select id="categoria-{{ incidencia['id'] }}" name="categoria">
+                            {% for categoria in categorias %}
+                                <option value="{{ categoria }}"
+                                        {% if incidencia["categoria"] == categoria %}selected{% endif %}>
+                                    {{ categoria }}
+                                </option>
+                            {% endfor %}
+                        </select>
+
+                        <label for="prioridad-{{ incidencia['id'] }}">Prioridad</label>
+                        <select id="prioridad-{{ incidencia['id'] }}" name="prioridad">
+                            {% for prioridad in prioridades %}
+                                <option value="{{ prioridad }}"
+                                        {% if incidencia["prioridad"] == prioridad %}selected{% endif %}>
+                                    {{ prioridad }}
+                                </option>
+                            {% endfor %}
+                        </select>
+
+                        <label for="estado-{{ incidencia['id'] }}">Estado</label>
+                        <select id="estado-{{ incidencia['id'] }}" name="estado">
+                            {% for estado in estados %}
+                                <option value="{{ estado }}"
+                                        {% if incidencia["estado"] == estado %}selected{% endif %}>
+                                    {{ estado }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit">Guardar cambios</button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No hay incidencias que coincidan con los filtros.</p>
+    {% endif %}
+{% endblock %}
