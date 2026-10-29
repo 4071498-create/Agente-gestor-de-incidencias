@@ -8,12 +8,17 @@
             "module": "flask",
             "args": [
                 "--app",
-                "app",
+                "app:create_app",
                 "run",
-                "--debug"
+                "--debug",
+                "--no-reload"
             ],
             "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
             "cwd": "${workspaceFolder}",
+            "env": {
+                "INCIDENCIAS_USUARIO_PASSWORD": "${input:incidenciasUsuarioPassword}",
+                "INCIDENCIAS_TECNICO_PASSWORD": "${input:incidenciasTecnicoPassword}"
+            },
             "console": "integratedTerminal",
             "justMyCode": true
         },
@@ -24,15 +29,34 @@
             "module": "flask",
             "args": [
                 "--app",
-                "app",
+                "app:create_app",
                 "run",
-                "--debug"
+                "--debug",
+                "--no-reload"
             ],
             "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
             "cwd": "${workspaceFolder}",
+            "env": {
+                "INCIDENCIAS_USUARIO_PASSWORD": "${input:incidenciasUsuarioPassword}",
+                "INCIDENCIAS_TECNICO_PASSWORD": "${input:incidenciasTecnicoPassword}"
+            },
             "console": "internalConsole",
             "redirectOutput": true,
             "justMyCode": true
+        }
+    ],
+    "inputs": [
+        {
+            "id": "incidenciasUsuarioPassword",
+            "type": "promptString",
+            "description": "Contraseña inicial de la cuenta usuario",
+            "password": true
+        },
+        {
+            "id": "incidenciasTecnicoPassword",
+            "type": "promptString",
+            "description": "Contraseña inicial de la cuenta tecnico",
+            "password": true
         }
     ]
 }
