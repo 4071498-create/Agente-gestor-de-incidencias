@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Iniciar sesión · Gestor de incidencias{% endblock %}
+
+{% block content %}
+    <h1>Iniciar sesión</h1>
+    <form action="{{ url_for('login') }}" method="post">
+        <label for="nombre_usuario">Usuario</label>
+        <input id="nombre_usuario" name="nombre_usuario" autocomplete="username" required>
+        <label for="contrasena">Contraseña</label>
+        <input id="contrasena" name="contrasena" type="password"
+               autocomplete="current-password" required>
+        <button type="submit">Entrar</button>
+    </form>
+{% endblock %}

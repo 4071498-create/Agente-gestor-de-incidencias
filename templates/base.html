@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Gestor de incidencias{% endblock %}</title>
+</head>
+<body>
+    <header>
+        <a href="{{ url_for('inicio') }}">Gestor de incidencias</a>
+        {% if g.usuario %}
+            <span>Sesión: {{ g.usuario["nombre_usuario"] }}</span>
+            <form action="{{ url_for('logout') }}" method="post">
+                <button type="submit">Cerrar sesión</button>
+            </form>
+        {% endif %}
+    </header>
+    <main>
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% for categoria, mensaje in mensajes %}
+                <p role="status" data-categoria="{{ categoria }}">{{ mensaje }}</p>
+            {% endfor %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

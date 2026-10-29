@@ -12,9 +12,11 @@ def test_arranque_prepara_base_de_datos_y_muestra_inicio(tmp_path, monkeypatch):
     app = create_app({"TESTING": True, "DATABASE": ruta_db})
 
     assert isinstance(app, Flask)
-    respuesta = app.test_client().get("/")
+    cliente = app.test_client()
+    assert cliente.get("/").status_code == 302
+    respuesta = cliente.get("/login")
     assert respuesta.status_code == 200
-    assert "La aplicación está en marcha" in respuesta.get_data(as_text=True)
+    assert "Iniciar sesión" in respuesta.get_data(as_text=True)
 
     with conectar_db(ruta_db) as conexion:
         usuarios = conexion.execute(

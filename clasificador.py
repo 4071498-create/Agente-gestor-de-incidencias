@@ -79,6 +79,7 @@ def clasificar(observacion: str) -> dict[str, str]:
         base_url=os.getenv("LMSTUDIO_URL", URL_POR_DEFECTO),
         api_key="lm-studio",
         timeout=10.0,
+        max_retries=0,
     )
     modelo = os.getenv("LMSTUDIO_MODEL", MODELO_POR_DEFECTO)
 

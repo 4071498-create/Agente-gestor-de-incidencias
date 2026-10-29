@@ -78,6 +78,7 @@ def test_clasificar_observacion_de_portatil_como_hardware(monkeypatch):
         "base_url": "http://localhost:1234/v1",
         "api_key": "lm-studio",
         "timeout": 10.0,
+        "max_retries": 0,
     }
     assert llamada["messages"][1]["content"].endswith(
         "No arranca el portátil, no enciende ni el led"

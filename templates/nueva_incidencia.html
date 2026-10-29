@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva incidencia · Gestor de incidencias{% endblock %}
+
+{% block content %}
+    <h1>Registrar una incidencia</h1>
+    <form action="{{ url_for('nueva_incidencia') }}" method="post">
+        <label for="observacion">Observación</label>
+        <textarea id="observacion" name="observacion" required></textarea>
+        <button type="submit">Registrar incidencia</button>
+    </form>
+    <a href="{{ url_for('inicio') }}">Volver a mis incidencias</a>
+{% endblock %}
