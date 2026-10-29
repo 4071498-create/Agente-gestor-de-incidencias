@@ -1,5 +1,7 @@
+from types import SimpleNamespace
 from unittest.mock import Mock
 
+from openai import APIError
 from werkzeug.security import generate_password_hash
 
 from app import create_app
@@ -178,6 +180,46 @@ def test_incidencia_se_guarda_con_categoria_revisar_si_falla_clasificacion(
             "SELECT categoria, estado FROM incidencias"
         ).fetchone()
     assert dict(incidencia) == {"categoria": "revisar", "estado": "abierta"}
+
+
+def test_lm_studio_no_disponible_guarda_incidente_sin_error_500(
+    tmp_path, monkeypatch
+):
+    cliente, ruta_db = crear_cliente(tmp_path, monkeypatch)
+    crear_completado = Mock(
+        side_effect=APIError("servidor no disponible", request=None, body=None)
+    )
+    cliente_lm = SimpleNamespace(
+        chat=SimpleNamespace(
+            completions=SimpleNamespace(create=crear_completado)
+        )
+    )
+    monkeypatch.setattr("clasificador.OpenAI", lambda **_: cliente_lm)
+    iniciar_sesion(cliente)
+
+    respuesta = cliente.post(
+        "/incidencias/nueva",
+        data={"observacion": "No hay conexión con el servidor"},
+        follow_redirects=True,
+    )
+
+    crear_completado.assert_called_once()
+    assert respuesta.status_code == 200
+    assert "La incidencia se ha registrado" in respuesta.get_data(as_text=True)
+    with conectar_db(ruta_db) as conexion:
+        incidencia = conexion.execute(
+            """
+            SELECT observacion, categoria, prioridad, resumen, estado
+            FROM incidencias
+            """
+        ).fetchone()
+    assert dict(incidencia) == {
+        "observacion": "No hay conexión con el servidor",
+        "categoria": "revisar",
+        "prioridad": "media",
+        "resumen": "Pendiente de clasificación",
+        "estado": "abierta",
+    }
 
 
 def test_tecnico_no_puede_usar_formulario_de_usuario(tmp_path, monkeypatch):
