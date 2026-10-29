@@ -1,0 +1,38 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Flask: Terminal integrado",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "flask",
+            "args": [
+                "--app",
+                "app",
+                "run",
+                "--debug"
+            ],
+            "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Flask: Consola de depuración",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "flask",
+            "args": [
+                "--app",
+                "app",
+                "run",
+                "--debug"
+            ],
+            "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "redirectOutput": true,
+            "justMyCode": true
+        }
+    ]
+}
